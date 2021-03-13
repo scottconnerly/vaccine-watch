@@ -1,7 +1,7 @@
 # Vaccine Watch
 Bot to notify when vaccine appointments are available.
 
-Supports checking Hy-Vee, Walgreens, Walmart, Cosentino's stores (KC), and Ball's stores (KC).
+Supports checking Hy-Vee, Walgreens, CVS, Walmart, Cosentino's stores (KC), and Ball's stores (KC).
 Supports sending notifications to Slack, Discord, and [Twitter](https://twitter.com/kcvaccinewatch).
 
 Notifications are sent when a location has appointments. No more notifications are sent for that location until it becomes unavailable again.
@@ -10,7 +10,7 @@ PRs welcome to support other clinics or notification methods.
 
 This project has no affiliation with any of the clinics mentioned.
 
-Walmart data courtesy of [covid-vaccine-spotter](https://github.com/GUI/covid-vaccine-spotter).
+Walmart and Walgreens data courtesy of [covid-vaccine-spotter](https://github.com/GUI/covid-vaccine-spotter).
 
 ## Example
 Slack
@@ -47,12 +47,6 @@ Twitter
 1. Create a project and an app for your bot
 1. Add `Read & Write` permissions to your app
 1. In `Keys & Tokens`, generate Consumer Keys and Access Token/Secret to use as environment variables
-
-### Walgreens
-1. Go to [this page](https://www.walgreens.com/findcare/vaccination/covid-19/location-screening).
-1. Open the network tab of your browser, and search for a zip code
-1. On the request labeled `availability`, grab the request header named `X-XSRF-TOKEN` and set it to env var `WALGREENS_X_XSRF_TOKEN`
-1. In the cookies for walgreens.com, grab the cookie named `XSRF-TOKEN` and put its value in env var `WALGREENS_XSRF_TOKEN_COOKIE`
 
 ## Lint
 1. Install [pre-commit](https://pre-commit.com)
