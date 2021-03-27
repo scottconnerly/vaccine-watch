@@ -1,4 +1,3 @@
-import logging
 import os
 
 import redis
@@ -10,35 +9,43 @@ from clinics.hyvee import HyVee
 from clinics.test_clinic import TestClinic
 from clinics.walgreens import Walgreens
 from clinics.walmart import Walmart
-from constants import TRUE_VALUES
-from notify import notify_available, notify_unavailable
+from notify.console import Console
+from notify.discord import Discord
+from notify.slack import Slack
+from notify.twilio import Twilio
+from notify.twitter import Twitter
+from utils import env_var_is_true
 
 redis_client = redis.Redis.from_url(os.environ["REDIS_URL"])
 
 enabled_clinics = []
-if "ENABLE_BALLS" in os.environ and os.environ["ENABLE_BALLS"].lower() in TRUE_VALUES:
+if env_var_is_true("ENABLE_BALLS"):
     enabled_clinics.append(Balls())
-if (
-    "ENABLE_COSENTINOS" in os.environ
-    and os.environ["ENABLE_COSENTINOS"].lower() in TRUE_VALUES
-):
+if env_var_is_true("ENABLE_COSENTINOS"):
     enabled_clinics.append(Cosentinos())
-if "ENABLE_CVS" in os.environ and os.environ["ENABLE_CVS"].lower() in TRUE_VALUES:
+if env_var_is_true("ENABLE_CVS"):
     enabled_clinics.append(CVS())
-if "ENABLE_HYVEE" in os.environ and os.environ["ENABLE_HYVEE"].lower() in TRUE_VALUES:
+if env_var_is_true("ENABLE_HYVEE"):
     enabled_clinics.append(HyVee())
-if (
-    "ENABLE_WALGREENS" in os.environ
-    and os.environ["ENABLE_WALGREENS"].lower() in TRUE_VALUES
-):
+if env_var_is_true("ENABLE_WALGREENS"):
     enabled_clinics.append(Walgreens())
-if (
-    "ENABLE_WALMART" in os.environ
-    and os.environ["ENABLE_WALMART"].lower() in TRUE_VALUES
-):
+if env_var_is_true("ENABLE_WALMART"):
     enabled_clinics.append(Walmart())
-if "ENABLE_TEST" in os.environ and os.environ["ENABLE_TEST"].lower() in TRUE_VALUES:
+if env_var_is_true("ENABLE_TEST"):
     enabled_clinics.append(TestClinic())
+
+enabled_notification_methods = []
+if env_var_is_true("NOTIFY_CONSOLE"):
+    enabled_notification_methods.append(Console())
+if "DISCORD_WEBHOOK_URL" in os.environ:
+    enabled_notification_methods.append(Discord())
+if "SLACK_BOT_TOKEN" in os.environ:
+    enabled_notification_methods.append(Slack())
+if "TWILIO_AUTH_TOKEN" in os.environ:
+    enabled_notification_methods.append(Twilio())
+if "TWITTER_CONSUMER_KEY" in os.environ:
+    enabled_notification_methods.append(Twitter())
+
 
 # If already notified for a location, don't notify again.
 # When a location doesn't have vaccines, reset to not notified.
@@ -64,12 +71,16 @@ def check_for_appointments():
             newly_unavailable_locations.append(location)
 
     if len(newly_available_locations) > 0:
-        notify_available(newly_available_locations)
         print("{} newly available locations".format(len(newly_available_locations)))
+        for notification_method in enabled_notification_methods:
+            notification_method.notify_available_locations(newly_available_locations)
 
     if len(newly_unavailable_locations) > 0:
-        notify_unavailable(newly_unavailable_locations)
         print("{} newly unavailable locations".format(len(newly_unavailable_locations)))
+        for notification_method in enabled_notification_methods:
+            notification_method.notify_unavailable_locations(
+                newly_unavailable_locations
+            )
 
     if len(newly_available_locations) == 0 and len(newly_unavailable_locations) == 0:
         print("nothing to notify")
